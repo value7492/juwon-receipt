@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E4F4A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>주원엔지니어링 법인카드 영수증</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+:root{
+  --ink:#111A20;
+  --ink2:#3C4A54;
+  --muted:#77868F;
+  --line:#DDE4E8;
+  --bg:#EBEFF1;
+  --card:#FFFFFF;
+  --brand:#0E4F4A;
+  --brand-soft:#E3F0EE;
+  --amber:#C97A16;
+  --amber-soft:#FBEFDD;
+  --danger:#B33A2E;
+  --radius:14px;
+  --pad:16px;
+  --safe-b:env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  background:var(--bg);color:var(--ink);
+  font-size:15px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+.num{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+#app{max-width:520px;margin:0 auto;min-height:100vh;position:relative;background:var(--bg)}
+
+/* ---------- 상단바 ---------- */
+.topbar{
+  position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) var(--pad) 12px;
+  display:flex;align-items:center;gap:10px;
+}
+.topbar h1{font-size:15px;font-weight:700;margin:0;letter-spacing:-0.01em;flex:1}
+.topbar .cardchip{
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.28);
+  padding:4px 10px;border-radius:999px;font-size:12px;font-weight:600
+}
+.topbar .linkbtn{color:rgba(255,255,255,.85);font-size:12.5px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+
+main{padding:var(--pad) var(--pad) 96px}
+
+/* ---------- 공통 카드 ---------- */
+.card{background:var(--card);border-radius:var(--radius);padding:var(--pad);border:1px solid var(--line)}
+.card + .card{margin-top:12px}
+.sec-title{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.06em;margin:22px 2px 8px}
+.sec-title:first-child{margin-top:4px}
+
+/* ---------- 영수증 모양 요약 카드 (시그니처) ---------- */
+.receipt{background:var(--card);border:1px solid var(--line);border-bottom:0;border-radius:var(--radius) var(--radius) 0 0;padding:18px var(--pad) 16px}
+.tear{
+  height:9px;background:var(--card);
+  -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M0 0 H14 L7 9 Z' fill='%23000'/%3E%3C/svg%3E");
+  mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9'%3E%3Cpath d='M0 0 H14 L7 9 Z' fill='%23000'/%3E%3C/svg%3E");
+  -webkit-mask-size:14px 9px;mask-size:14px 9px;-webkit-mask-repeat:repeat-x;mask-repeat:repeat-x;
+}
+.receipt .rlabel{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+.receipt .rtotal{font-size:34px;font-weight:800;margin:2px 0 0;letter-spacing:-0.03em}
+.receipt .rtotal small{font-size:16px;font-weight:700;margin-left:2px}
+.receipt .rmeta{display:flex;gap:14px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);font-size:12.5px;color:var(--ink2)}
+.receipt .rmeta b{font-weight:700}
+
+/* ---------- 버튼 ---------- */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:12px;font-weight:700;font-size:15px;border:1px solid transparent}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-primary:active{background:#0A3D39}
+.btn-ghost{background:var(--card);color:var(--ink);border-color:var(--line)}
+.btn-danger{background:#fff;color:var(--danger);border-color:#EBC7C2}
+.btn-amber{background:var(--amber);color:#fff}
+.btn.sm{padding:10px 14px;font-size:13.5px;width:auto}
+.btnrow{display:flex;gap:8px;margin-top:12px}
+.btnrow .btn{flex:1}
+.shoot{
+  background:var(--brand);color:#fff;border-radius:16px;padding:22px 16px;width:100%;
+  display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:800;font-size:17px;
+  box-shadow:0 6px 18px rgba(14,79,74,.24)
+}
+.shoot span{font-size:12.5px;font-weight:500;opacity:.85}
+.shoot svg{width:30px;height:30px}
+
+/* ---------- 폼 ---------- */
+label.f{display:block;margin-top:14px}
+label.f:first-child{margin-top:0}
+label.f .lb{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+input[type=text],input[type=number],input[type=date],input[type=password],input[type=email],select,textarea{
+  width:100%;padding:13px 12px;border:1px solid var(--line);border-radius:10px;background:#FBFCFC
+}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);background:#fff;outline:none}
+.hint{font-size:12px;color:var(--muted);margin-top:6px;line-height:1.5}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink2)}
+.chip.on{background:var(--brand-soft);border-color:var(--brand);color:var(--brand)}
+
+/* ---------- 목록 ---------- */
+.rowlist{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.row{display:flex;gap:12px;align-items:center;padding:13px var(--pad);border-bottom:1px solid var(--line);width:100%;text-align:left}
+.row:last-child{border-bottom:0}
+.row .d{width:42px;flex:none;text-align:center}
+.row .d b{display:block;font-size:16px;font-weight:800;line-height:1.1}
+.row .d i{font-style:normal;font-size:10.5px;color:var(--muted)}
+.row .m{flex:1;min-width:0}
+.row .m b{display:block;font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .m i{font-style:normal;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
+.row .a{font-weight:800;font-size:15px;white-space:nowrap}
+.tag{display:inline-block;background:var(--brand-soft);color:var(--brand);border-radius:5px;padding:1px 5px;font-size:10.5px;font-weight:700;margin-right:4px;vertical-align:1px}
+.tag.off{background:#F0F2F3;color:var(--muted)}
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13.5px;line-height:1.7}
+
+/* ---------- 월 선택 ---------- */
+.monthbar{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:12px}
+.monthbar button{width:38px;height:36px;border-radius:9px;font-size:18px;font-weight:700;color:var(--ink2);background:#F4F6F7}
+.monthbar .mm{flex:1;text-align:center;font-weight:800;font-size:15.5px}
+
+/* ---------- 그래프 ---------- */
+.bars{margin-top:4px}
+.bar{margin-top:12px}
+.bar .bl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.bar .bl b{font-weight:700}
+.bar .bt{height:9px;background:#EEF1F2;border-radius:99px;overflow:hidden}
+.bar .bt i{display:block;height:100%;background:var(--brand);border-radius:99px;transition:width .4s ease}
+.bar:nth-child(2n) .bt i{background:#2E7C74}
+.bar:nth-child(3n) .bt i{background:var(--amber)}
+
+/* ---------- 하단 탭 ---------- */
+.tabs{
+  position:fixed;bottom:0;left:0;right:0;z-index:30;display:flex;
+  max-width:520px;margin:0 auto;background:rgba(255,255,255,.96);
+  backdrop-filter:blur(8px);border-top:1px solid var(--line);
+  padding-bottom:var(--safe-b)
+}
+.tabs button{flex:1;padding:9px 0 10px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--muted)}
+.tabs button.on{color:var(--brand)}
+.tabs svg{width:21px;height:21px}
+
+/* ---------- 로그인 ---------- */
+.login{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;background:var(--brand);color:#fff}
+.login .logo{font-size:12px;letter-spacing:.18em;font-weight:700;opacity:.7}
+.login h2{font-size:26px;font-weight:800;margin:6px 0 2px;letter-spacing:-0.03em;line-height:1.3}
+.login p{opacity:.75;font-size:13.5px;margin:0 0 28px}
+.pinbox{display:flex;gap:10px;justify-content:center;margin-bottom:8px}
+.pindot{width:52px;height:62px;border-radius:12px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800}
+.pindot.fill{background:#fff;color:var(--brand);border-color:#fff}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
+.keypad button{padding:16px 0;border-radius:12px;background:rgba(255,255,255,.12);color:#fff;font-size:21px;font-weight:700}
+.keypad button:active{background:rgba(255,255,255,.28)}
+.keypad button.fn{font-size:14px;font-weight:700;background:transparent}
+.loginmsg{text-align:center;min-height:22px;font-size:13px;color:#FFD9A8;font-weight:600;margin-top:14px}
+.login .foot{margin-top:26px;text-align:center}
+.login .foot button{color:rgba(255,255,255,.8);font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.remember{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:16px;font-size:13px;opacity:.85}
+.remember input{width:18px;height:18px;accent-color:#fff}
+
+/* ---------- 모달 ---------- */
+.sheet{position:fixed;inset:0;z-index:60;background:rgba(17,26,32,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet .inner{background:var(--card);width:100%;max-width:520px;border-radius:18px 18px 0 0;padding:20px var(--pad) calc(20px + var(--safe-b));max-height:88vh;overflow:auto}
+.sheet h3{margin:0 0 4px;font-size:17px;font-weight:800}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:80;background:var(--ink);color:#fff;padding:11px 18px;border-radius:99px;font-size:13.5px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+.preview{width:100%;border-radius:12px;border:1px solid var(--line);display:block}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.warn{background:var(--amber-soft);border:1px solid #EFD9B4;color:#7A4B0B;border-radius:10px;padding:11px 12px;font-size:12.5px;line-height:1.6;margin-top:10px}
+.kv{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.kv:last-child{border-bottom:0}
+.kv span{color:var(--muted)}
+.kv b{font-weight:700;text-align:right;max-width:62%}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   주원엔지니어링 법인카드 영수증 자동화 — 단일 파일 웹앱
+   ===================================================================== */
+
+/* ---------- 1. 저장소 어댑터 (환경에 따라 자동 선택) ---------- */
+const Store = (() => {
+  const ws = (typeof window !== 'undefined' && window.storage && typeof window.storage.get === 'function') ? window.storage : null;
+  return {
+    async get(k){
+      if(ws){ try{ const r = await ws.get(k); return r ? r.value : null; }catch(e){ return null; } }
+      try{ return localStorage.getItem(k); }catch(e){ return null; }
+    },
+    async set(k,v){
+      if(ws){ try{ await ws.set(k,v); return true; }catch(e){ return false; } }
+      try{ localStorage.setItem(k,v); return true; }catch(e){ return false; }
+    },
+    async del(k){
+      if(ws){ try{ await ws.delete(k); }catch(e){} return; }
+      try{ localStorage.removeItem(k); }catch(e){}
+    }
+  };
+})();
+
+/* 영수증 사진은 용량이 커서 IndexedDB에 따로 보관 (불가 시 일반 저장소로 대체) */
+const ImgStore = (() => {
+  let dbp = null;
+  function open(){
+    if(dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      if(!window.indexedDB) return rej(new Error('no-idb'));
+      const r = indexedDB.open('juwon_receipt', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('img'); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }).catch(e => { dbp = null; throw e; });
+    return dbp;
+  }
+  return {
+    async put(k, v){
+      try{
+        const db = await open();
+        return await new Promise((res, rej) => {
+          const t = db.transaction('img','readwrite');
+          t.objectStore('img').put(v, k);
+          t.oncomplete = () => res(true);
+          t.onerror = () => rej(t.error);
+        });
+      }catch(e){ return Store.set('img_' + k, v); }
+    },
+    async get(k){
+      try{
+        const db = await open();
+        return await new Promise((res, rej) => {
+          const t = db.transaction('img','readonly');
+          const q = t.objectStore('img').get(k);
+          q.onsuccess = () => res(q.result || null);
+          q.onerror = () => rej(q.error);
+        });
+      }catch(e){ return Store.get('img_' + k); }
+    },
+    async del(k){
+      try{
+        const db = await open();
+        await new Promise((res) => {
+          const t = db.transaction('img','readwrite');
+          t.objectStore('img').delete(k);
+          t.oncomplete = res; t.onerror = res;
+        });
+      }catch(e){ await Store.del('img_' + k); }
+    }
+  };
+})();
+
+/* 기기 기억용 소형 저장 (사생활 보호 모드 등에서 실패해도 앱은 계속 동작) */
+const LS = {
+  get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+
+/* ---------- 2. 상태 ---------- */
+const KEY = 'juwon_receipt_v1';
+const DEFAULTS = {
+  cards: [
+    { id:'c1', last4:'1234', alias:'법인1234', dept:'', active:true }
+  ],
+  receipts: [],
+  settings: {
+    adminPin:'1234',
+    geminiKey:'',
+    geminiModel:'gemini-3.5-flash',
+    taxEmail:'',
+    company:'(주)주원엔지니어링'
+  }
+};
+let S = JSON.parse(JSON.stringify(DEFAULTS));
+let session = { last4:null, admin:false, view:'home', month:ym(new Date()), draft:null, editId:null };
+
+const PURPOSES = ['주유','식대','자재구입','통행료','출장경비','접대비','소모품','택배/운송','차량정비','기타'];
+
+/* ---------- 3. 유틸 ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won = n => (Number(n)||0).toLocaleString('ko-KR');
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+function ym(d){ return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+function today(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function ymLabel(v){ const [y,m] = v.split('-'); return y + '년 ' + Number(m) + '월'; }
+function shiftMonth(v, n){
+  const [y,m] = v.split('-').map(Number);
+  const d = new Date(y, m-1+n, 1);
+  return ym(d);
+}
+function dayOfWeek(ds){ return ['일','월','화','수','목','금','토'][new Date(ds+'T00:00:00').getDay()]; }
+function cardOf(last4){ return S.cards.find(c => c.last4 === last4); }
+function aliasOf(last4){ const c = cardOf(last4); return c ? c.alias : ('법인' + last4); }
+
+function toast(msg){
+  const old = document.querySelector('.toast'); if(old) old.remove();
+  const el = document.createElement('div');
+  el.className = 'toast'; el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+async function loadAll(){
+  const raw = await Store.get(KEY);
+  if(raw){
+    try{
+      const p = JSON.parse(raw);
+      S.cards = p.cards || DEFAULTS.cards;
+      S.receipts = p.receipts || [];
+      S.settings = Object.assign({}, DEFAULTS.settings, p.settings || {});
+      if(S.settings.geminiModel === 'gemini-2.5-flash') S.settings.geminiModel = 'gemini-3.5-flash';
+    }catch(e){ /* 손상 시 기본값 유지 */ }
+  }
+}
+async function saveAll(){
+  const ok = await Store.set(KEY, JSON.stringify({ cards:S.cards, receipts:S.receipts, settings:S.settings }));
+  if(!ok) toast('저장 공간이 가득 찼습니다. 설정에서 백업 후 정리하세요.');
+  return ok;
+}
+
+/* 월별 영수증 (관리자는 전체, 일반 사용자는 본인 카드만) */
+function monthReceipts(month, last4){
+  return S.receipts
+    .filter(r => r.date.slice(0,7) === month)
+    .filter(r => last4 ? r.last4 === last4 : true)
+    .sort((a,b) => a.date === b.date ? (a.last4 > b.last4 ? 1 : -1) : (a.date < b.date ? 1 : -1));
+}
+const sum = arr => arr.reduce((t,r) => t + (Number(r.amount)||0), 0);
+
+/* ---------- 4. 로그인 화면 ---------- */
+let pinBuf = '';
+function renderLogin(){
+  const remembered = LS.get('juwon_remember') === '1';
+  $('#app').innerHTML = `
+  <div class="login">
+    <div class="logo">JUWON ENGINEERING</div>
+    <h2>법인카드 영수증</h2>
+    <p>카드 뒷 4자리를 입력하세요</p>
+    <div class="pinbox" id="pinbox"></div>
+    <div class="loginmsg" id="loginmsg"></div>
+    <div class="keypad">
+      ${[1,2,3,4,5,6,7,8,9].map(n => `<button data-k="${n}">${n}</button>`).join('')}
+      <button class="fn" data-k="clear">전체삭제</button>
+      <button data-k="0">0</button>
+      <button class="fn" data-k="back">지움</button>
+    </div>
+    <div class="remember">
+      <input type="checkbox" id="rem" ${remembered ? 'checked' : ''}>
+      <label for="rem">이 기기에서 카드번호 기억하기</label>
+    </div>
+    <div class="foot"><button id="goadmin">관리자로 들어가기</button></div>
+  </div>`;
+  drawPin();
+  document.querySelectorAll('.keypad button').forEach(b => {
+    b.onclick = () => {
+      const k = b.dataset.k;
+      if(k === 'back') pinBuf = pinBuf.slice(0,-1);
+      else if(k === 'clear') pinBuf = '';
+      else if(pinBuf.length < 4) pinBuf += k;
+      drawPin();
+      if(pinBuf.length === 4) tryLogin();
+    };
+  });
+  $('#goadmin').onclick = askAdmin;
+}
+function drawPin(){
+  const box = $('#pinbox'); if(!box) return;
+  box.innerHTML = [0,1,2,3].map(i =>
+    `<div class="pindot ${pinBuf[i] ? 'fill' : ''}">${pinBuf[i] ? '•' : ''}</div>`).join('');
+}
+function tryLogin(){
+  const c = S.cards.find(c => c.last4 === pinBuf && c.active);
+  if(!c){
+    const dead = S.cards.find(c => c.last4 === pinBuf);
+    $('#loginmsg').textContent = dead ? '폐기된 카드입니다. 관리자에게 문의하세요.' : '등록되지 않은 카드번호입니다.';
+    pinBuf = ''; setTimeout(drawPin, 400);
+    return;
+  }
+  if($('#rem') && $('#rem').checked){ LS.set('juwon_remember','1'); LS.set('juwon_last4', c.last4); }
+  else { LS.del('juwon_remember'); LS.del('juwon_last4'); }
+  session.last4 = c.last4; session.admin = false; session.view = 'home'; pinBuf = '';
+  render();
+}
+function askAdmin(){
+  const pin = prompt('관리자 비밀번호를 입력하세요');
+  if(pin === null) return;
+  if(pin !== S.settings.adminPin){ toast('비밀번호가 맞지 않습니다.'); return; }
+  session.admin = true; session.last4 = null; session.view = 'home'; pinBuf = '';
+  render();
+}
+
+/* ---------- 5. 레이아웃 ---------- */
+function render(){
+  if(!session.admin && !session.last4){ renderLogin(); return; }
+  const views = {
+    home: viewHome, list: viewList, report: viewReport, settings: viewSettings,
+    form: viewForm, cards: viewCards
+  };
+  const body = (views[session.view] || viewHome)();
+  $('#app').innerHTML = `
+    <div class="topbar">
+      <h1>${session.admin ? '관리자 모드' : esc(S.settings.company)}</h1>
+      <span class="cardchip">${session.admin ? '전체 카드' : esc(aliasOf(session.last4))}</span>
+      <button class="linkbtn" id="logout">나가기</button>
+    </div>
+    <main id="main">${body}</main>
+    ${session.view === 'form' ? '' : tabsHTML()}
+  `;
+  $('#logout').onclick = () => { session = { last4:null, admin:false, view:'home', month:ym(new Date()), draft:null, editId:null }; render(); };
+  document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { session.view = b.dataset.v; render(); });
+  const after = { home:afterHome, list:afterList, report:afterReport, settings:afterSettings, form:afterForm, cards:afterCards }[session.view];
+  if(after) after();
+}
+function tabsHTML(){
+  const items = [
+    ['home','홈','M3 10.5 12 3l9 7.5V21H3z'],
+    ['list','내역','M4 6h16M4 12h16M4 18h10'],
+    ['report','리포트','M4 20V10M10 20V4M16 20v-7M22 20H2'],
+    ['settings','설정','M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 12h2m14 0h2M12 3v2m0 14v2']
+  ];
+  return `<nav class="tabs">${items.map(([v,label,d]) => `
+    <button data-v="${v}" class="${session.view===v?'on':''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>
+      ${label}
+    </button>`).join('')}</nav>`;
+}
+
+/* ---------- 6. 홈 ---------- */
+function viewHome(){
+  const m = ym(new Date());
+  const mine = monthReceipts(m, session.admin ? null : session.last4);
+  const recent = mine.slice(0,5);
+  return `
+  <div class="receipt">
+    <div class="rlabel">${ymLabel(m)} ${session.admin ? '전체' : esc(aliasOf(session.last4))} 사용액</div>
+    <div class="rtotal num">${won(sum(mine))}<small>원</small></div>
+    <div class="rmeta">
+      <div>등록 <b class="num">${mine.length}</b>건</div>
+      <div>미작성 목적 <b class="num">${mine.filter(r=>!r.purpose).length}</b>건</div>
+    </div>
+  </div>
+  <div class="tear"></div>
+
+  <div style="margin-top:16px">
+    <button class="shoot" id="shootBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/>
+      </svg>
+      영수증 촬영
+      <span>찍으면 날짜·상호·금액을 자동으로 읽습니다</span>
+    </button>
+    <input type="file" id="camIn" accept="image/*" capture="environment" style="display:none">
+    <input type="file" id="galIn" accept="image/*" style="display:none">
+    <div class="btnrow">
+      <button class="btn btn-ghost" id="galBtn">앨범에서 선택</button>
+      <button class="btn btn-ghost" id="manualBtn">직접 입력</button>
+    </div>
+  </div>
+
+  <div class="sec-title">최근 등록</div>
+  ${recent.length ? `<div class="rowlist">${recent.map(rowHTML).join('')}</div>`
+    : `<div class="card empty">아직 등록된 영수증이 없습니다.<br>위 버튼으로 첫 영수증을 등록해 보세요.</div>`}
+  `;
+}
+function afterHome(){
+  $('#shootBtn').onclick = () => $('#camIn').click();
+  $('#galBtn').onclick = () => $('#galIn').click();
+  $('#manualBtn').onclick = () => { startDraft(null); };
+  $('#camIn').onchange = e => handleFile(e.target.files[0]);
+  $('#galIn').onchange = e => handleFile(e.target.files[0]);
+  document.querySelectorAll('[data-rid]').forEach(b => b.onclick = () => openDetail(b.dataset.rid));
+}
+function rowHTML(r){
+  const d = r.date.split('-');
+  return `<button class="row" data-rid="${r.id}">
+    <div class="d"><b class="num">${Number(d[2])}</b><i>${d[1]}월 ${dayOfWeek(r.date)}</i></div>
+    <div class="m">
+      <b>${esc(r.vendor || '(상호 미입력)')}</b>
+      <i><span class="tag">${esc(aliasOf(r.last4))}</span>${esc(r.purpose || '사용 목적 미입력')}</i>
+    </div>
+    <div class="a num">${won(r.amount)}</div>
+  </button>`;
+}
+
+/* ---------- 7. 사진 처리 + OCR ---------- */
+async function handleFile(file){
+  if(!file) return;
+  toast('사진을 처리하는 중…');
+  try{
+    const dataUrl = await compress(file, 1400, 0.62);
+    startDraft(dataUrl);
+    runOCR(dataUrl);
+  }catch(e){
+    toast('사진을 읽지 못했습니다. 다시 시도해 주세요.');
+  }
+}
+function compress(file, maxW, q){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(1, maxW / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale);
+        const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+        const cx = cv.getContext('2d');
+        cx.fillStyle = '#fff'; cx.fillRect(0,0,w,h);
+        cx.drawImage(img, 0, 0, w, h);
+        res(cv.toDataURL('image/jpeg', q));
+      };
+      img.onerror = rej;
+      img.src = fr.result;
+    };
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
+  });
+}
+
+async function runOCR(dataUrl){
+  const key = (S.settings.geminiKey || '').trim();
+  const st = $('#ocrState');
+  if(!key){
+    if(st) st.innerHTML = `<div class="warn"><b>자동 인식이 꺼져 있습니다.</b><br>아래 <b>사용처</b>와 <b>금액</b>을 직접 입력해야 저장됩니다. 자동으로 채우려면 설정 → OCR에서 Gemini API 키를 등록하세요.</div>`;
+    return;
+  }
+  if(st) st.innerHTML = `<div class="warn"><span class="spin" style="border-color:rgba(122,75,11,.3);border-top-color:#7A4B0B"></span> 영수증을 읽는 중입니다…</div>`;
+  const model = (S.settings.geminiModel || 'gemini-3.5-flash').trim();
+  const b64 = dataUrl.split(',')[1];
+  const prompt = '이 한국 영수증 이미지에서 정보를 추출해 JSON만 출력해라. 형식: {"date":"YYYY-MM-DD","vendor":"상호명","amount":숫자,"last4":"카드뒷4자리"} '
+    + 'amount는 총 결제금액(숫자만, 쉼표 없이). vendor는 가맹점 상호. 알 수 없으면 빈 문자열 또는 0. 설명이나 코드블록 없이 JSON만 출력.';
+  try{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        contents:[{ parts:[ { inline_data:{ mime_type:'image/jpeg', data:b64 } }, { text:prompt } ] }],
+        generationConfig:{ temperature:0 }
+      })
+    });
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error(res.status + ' ' + t.slice(0,180));
+    }
+    const j = await res.json();
+    const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+    const text = parts.map(p => p.text || '').join('');
+    const m = text.match(/\{[\s\S]*\}/);
+    if(!m) throw new Error('형식 오류');
+    const o = JSON.parse(m[0]);
+    if(o.date && /^\d{4}-\d{2}-\d{2}$/.test(o.date)) setVal('#f_date', o.date);
+    if(o.vendor) setVal('#f_vendor', String(o.vendor).slice(0,40));
+    const amt = Number(String(o.amount).replace(/[^\d]/g,''));
+    if(amt > 0) setVal('#f_amount', amt);
+    if(st) st.innerHTML = `<div class="warn" style="background:var(--brand-soft);border-color:#BFDDD8;color:#0E4F4A">자동 인식 완료. 금액과 날짜가 맞는지 꼭 확인하세요.</div>`;
+    checkDup();
+  }catch(e){
+    if(st) st.innerHTML = `<div class="warn">자동 인식에 실패했습니다 (${esc(e.message)}). 직접 입력해 주세요.</div>`;
+  }
+}
+function setVal(sel, v){ const el = $(sel); if(el) el.value = v; }
+
+/* ---------- 8. 등록/수정 폼 ---------- */
+function startDraft(dataUrl){
+  session.draft = { img: dataUrl || null, last4: session.admin ? (S.cards.find(c=>c.active)||{}).last4 : session.last4 };
+  session.editId = null;
+  session.view = 'form';
+  render();
+}
+async function openEdit(id){
+  const r = S.receipts.find(x => x.id === id);
+  if(!r) return;
+  const img = r.hasImg ? await ImgStore.get(r.id) : null;
+  session.draft = { img, last4:r.last4, date:r.date, vendor:r.vendor, amount:r.amount, purpose:r.purpose, note:r.note };
+  session.editId = id;
+  session.view = 'form';
+  render();
+}
+function viewForm(){
+  const d = session.draft || {};
+  const cards = S.cards.filter(c => c.active || c.last4 === d.last4);
+  return `
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <b style="font-size:16px">${session.editId ? '영수증 수정' : '영수증 등록'}</b>
+      <button class="btn btn-ghost sm" id="cancelBtn">취소</button>
+    </div>
+    ${d.img ? `<img class="preview" src="${d.img}" alt="촬영한 영수증">` : ''}
+    <div id="ocrState"></div>
+
+    <label class="f"><span class="lb">사용 카드</span>
+      <select id="f_card">${cards.map(c => `<option value="${c.last4}" ${c.last4===d.last4?'selected':''}>${esc(c.alias)}${c.dept?' · '+esc(c.dept):''}</option>`).join('')}</select>
+    </label>
+    <label class="f"><span class="lb">사용 일자 <b style="color:var(--danger)">*</b></span>
+      <input type="date" id="f_date" value="${esc(d.date || today())}">
+    </label>
+    <label class="f"><span class="lb">사용처 (상호명) <b style="color:var(--danger)">*</b></span>
+      <input type="text" id="f_vendor" placeholder="예: GS칼텍스 수원점" value="${esc(d.vendor || '')}">
+    </label>
+    <label class="f"><span class="lb">금액 (원) <b style="color:var(--danger)">*</b></span>
+      <input type="number" id="f_amount" inputmode="numeric" placeholder="0" value="${d.amount || ''}">
+    </label>
+    <label class="f"><span class="lb">사용 목적</span>
+      <input type="text" id="f_purpose" placeholder="예: 수원 삼성전자 A/S - 주유" value="${esc(d.purpose || '')}">
+    </label>
+    <div class="chips" id="pchips">${PURPOSES.map(p => `<button class="chip" data-p="${p}">${p}</button>`).join('')}</div>
+    <label class="f"><span class="lb">비고 (선택)</span>
+      <input type="text" id="f_note" placeholder="세무사 전달용 메모" value="${esc(d.note || '')}">
+    </label>
+    <div id="formErr"></div>
+    <div id="dupWarn"></div>
+    <div class="btnrow">
+      <button class="btn btn-primary" id="saveBtn">${session.editId ? '수정 저장' : '저장하기'}</button>
+    </div>
+    ${session.editId ? `<div class="btnrow"><button class="btn btn-danger" id="delBtn">이 영수증 삭제</button></div>` : ''}
+  </div>`;
+}
+function afterForm(){
+  $('#cancelBtn').onclick = () => { session.draft = null; session.editId = null; session.view = 'home'; render(); };
+  document.querySelectorAll('#pchips .chip').forEach(b => b.onclick = () => {
+    const cur = $('#f_purpose').value.trim();
+    $('#f_purpose').value = cur ? (cur + ' ' + b.dataset.p) : b.dataset.p;
+  });
+  ['#f_date','#f_amount','#f_card'].forEach(s => { const el = $(s); if(el) el.onchange = checkDup; });
+  $('#saveBtn').onclick = saveDraft;
+  if($('#delBtn')) $('#delBtn').onclick = () => removeReceipt(session.editId);
+}
+function checkDup(){
+  const box = $('#dupWarn'); if(!box) return;
+  const date = $('#f_date').value, amount = Number($('#f_amount').value), last4 = $('#f_card').value;
+  const hit = S.receipts.find(r => r.id !== session.editId && r.date === date && Number(r.amount) === amount && r.last4 === last4 && amount > 0);
+  box.innerHTML = hit ? `<div class="warn">같은 카드·같은 날짜·같은 금액(${won(amount)}원)의 영수증이 이미 등록되어 있습니다. 중복이 아닌지 확인하세요.</div>` : '';
+}
+async function saveDraft(){
+  const last4 = $('#f_card').value;
+  const date = $('#f_date').value;
+  const vendor = $('#f_vendor').value.trim();
+  const amount = Number($('#f_amount').value);
+  const purpose = $('#f_purpose').value.trim();
+  const note = $('#f_note').value.trim();
+  ['#f_date','#f_vendor','#f_amount'].forEach(sel => { const e = $(sel); if(e) e.style.borderColor = ''; });
+  const errBox = $('#formErr'); if(errBox) errBox.innerHTML = '';
+  const fail = (sel, msg) => {
+    if(errBox) errBox.innerHTML = `<div class="warn" style="background:#FBEBE9;border-color:#EBC7C2;color:#8E2C21">${msg}</div>`;
+    const e = $(sel);
+    if(e){ e.style.borderColor = 'var(--danger)'; e.focus(); e.scrollIntoView({ block:'center', behavior:'smooth' }); }
+  };
+  if(!date){ fail('#f_date','사용 일자를 입력해야 저장됩니다.'); return; }
+  if(!vendor){ fail('#f_vendor','사용처(상호명)를 입력해야 저장됩니다. 영수증 위쪽 가게 이름을 적어 주세요.'); return; }
+  if(!amount || amount <= 0){ fail('#f_amount','금액을 입력해야 저장됩니다. 숫자만 적어 주세요. (예: 50000)'); return; }
+
+  const img = session.draft && session.draft.img;
+  if(session.editId){
+    const r = S.receipts.find(x => x.id === session.editId);
+    Object.assign(r, { last4, date, vendor, amount, purpose, note, updatedAt: Date.now() });
+  }else{
+    const id = uid();
+    S.receipts.push({ id, last4, date, vendor, amount, purpose, note, hasImg: !!img, createdAt: Date.now(), updatedAt: Date.now() });
+    if(img) await ImgStore.put(id, img);
+  }
+  await saveAll();
+  session.draft = null; session.editId = null; session.view = 'list';
+  session.month = date.slice(0,7);
+  render();
+  toast('저장했습니다.');
+}
+async function removeReceipt(id){
+  if(!confirm('이 영수증 내역을 삭제할까요? 되돌릴 수 없습니다.')) return;
+  S.receipts = S.receipts.filter(r => r.id !== id);
+  await ImgStore.del(id);
+  await saveAll();
+  session.draft = null; session.editId = null; session.view = 'list';
+  render();
+  toast('삭제했습니다.');
+}
+
+/* ---------- 9. 내역 ---------- */
+function viewList(){
+  const list = monthReceipts(session.month, session.admin ? null : session.last4);
+  const byCard = {};
+  list.forEach(r => { byCard[r.last4] = (byCard[r.last4] || 0) + Number(r.amount || 0); });
+  const max = Math.max(1, ...Object.values(byCard));
+  const cardBars = Object.entries(byCard).sort((a,b) => b[1]-a[1]).map(([l4,v]) => `
+    <div class="bar">
+      <div class="bl"><span>${esc(aliasOf(l4))}</span><b class="num">${won(v)}원</b></div>
+      <div class="bt"><i style="width:${Math.round(v/max*100)}%"></i></div>
+    </div>`).join('');
+
+  return `
+  <div class="monthbar">
+    <button id="prevM">‹</button>
+    <div class="mm">${ymLabel(session.month)}</div>
+    <button id="nextM">›</button>
+  </div>
+  <div class="receipt">
+    <div class="rlabel">합계</div>
+    <div class="rtotal num">${won(sum(list))}<small>원</small></div>
+    <div class="rmeta"><div>총 <b class="num">${list.length}</b>건</div>${session.admin?`<div>카드 <b class="num">${Object.keys(byCard).length}</b>장</div>`:''}</div>
+  </div>
+  <div class="tear"></div>
+
+  ${Object.keys(byCard).length > (session.admin ? 0 : 1) ? `<div class="sec-title">카드별 사용액</div><div class="card bars">${cardBars}</div>` : ''}
+
+  <div class="sec-title">사용 내역</div>
+  ${list.length ? `<div class="rowlist">${list.map(rowHTML).join('')}</div>`
+    : `<div class="card empty">${ymLabel(session.month)}에 등록된 내역이 없습니다.</div>`}
+  `;
+}
+function afterList(){
+  $('#prevM').onclick = () => { session.month = shiftMonth(session.month, -1); render(); };
+  $('#nextM').onclick = () => { session.month = shiftMonth(session.month, 1); render(); };
+  document.querySelectorAll('[data-rid]').forEach(b => b.onclick = () => openDetail(b.dataset.rid));
+}
+
+async function openDetail(id){
+  const r = S.receipts.find(x => x.id === id); if(!r) return;
+  const img = r.hasImg ? await ImgStore.get(id) : null;
+  const el = document.createElement('div');
+  el.className = 'sheet';
+  el.innerHTML = `<div class="inner">
+    <h3>${esc(r.vendor)}</h3>
+    <div style="font-size:26px;font-weight:800;margin:2px 0 14px" class="num">${won(r.amount)}<span style="font-size:15px">원</span></div>
+    ${img ? `<img class="preview" src="${img}" alt="영수증 사진" style="margin-bottom:14px">` : ''}
+    <div class="kv"><span>사용 일자</span><b>${esc(r.date)} (${dayOfWeek(r.date)})</b></div>
+    <div class="kv"><span>사용 카드</span><b>${esc(aliasOf(r.last4))}</b></div>
+    <div class="kv"><span>사용 목적</span><b>${esc(r.purpose || '-')}</b></div>
+    <div class="kv"><span>비고</span><b>${esc(r.note || '-')}</b></div>
+    <div class="btnrow">
+      <button class="btn btn-ghost" id="closeS">닫기</button>
+      <button class="btn btn-primary" id="editS">수정</button>
+    </div>
+  </div>`;
+  document.body.appendChild(el);
+  el.onclick = e => { if(e.target === el) el.remove(); };
+  el.querySelector('#closeS').onclick = () => el.remove();
+  el.querySelector('#editS').onclick = () => { el.remove(); openEdit(id); };
+}
+
+/* ---------- 10. 리포트 ---------- */
+function viewReport(){
+  const list = monthReceipts(session.month, session.admin ? null : session.last4);
+  const byCard = {};
+  list.forEach(r => { byCard[r.last4] = (byCard[r.last4] || 0) + Number(r.amount||0); });
+  const rows = Object.entries(byCard).sort((a,b) => b[1]-a[1]);
+  const max = Math.max(1, ...rows.map(r => r[1]));
+  const noPurpose = list.filter(r => !r.purpose).length;
+
+  return `
+  <div class="monthbar">
+    <button id="prevM">‹</button>
+    <div class="mm">${ymLabel(session.month)} 정산</div>
+    <button id="nextM">›</button>
+  </div>
+  <div class="receipt">
+    <div class="rlabel">정산 대상 금액</div>
+    <div class="rtotal num">${won(sum(list))}<small>원</small></div>
+    <div class="rmeta"><div>총 <b class="num">${list.length}</b>건</div><div>카드 <b class="num">${rows.length}</b>장</div></div>
+  </div>
+  <div class="tear"></div>
+
+  ${noPurpose ? `<div class="warn">사용 목적이 비어 있는 내역이 <b>${noPurpose}건</b> 있습니다. 세무 처리 전에 채워 주세요.</div>` : ''}
+
+  ${rows.length ? `<div class="sec-title">카드별 비중</div>
+  <div class="card bars">${rows.map(([l4,v]) => `
+    <div class="bar">
+      <div class="bl"><span>${esc(aliasOf(l4))}</span><b class="num">${won(v)}원 · ${Math.round(v/sum(list)*100)}%</b></div>
+      <div class="bt"><i style="width:${Math.round(v/max*100)}%"></i></div>
+    </div>`).join('')}</div>` : `<div class="card empty">해당 월에 정산할 내역이 없습니다.</div>`}
+
+  <div class="sec-title">엑셀 정산 보고서</div>
+  <div class="card">
+    <div class="hint" style="margin:0 0 12px">첫 번째 시트에 전체 카드 통합 내역, 이어지는 시트에 카드별 내역이 각각 만들어집니다. 시트마다 하단에 월 합계가 들어갑니다.</div>
+    <button class="btn btn-primary" id="xlsxBtn">엑셀 파일 만들기</button>
+    <div class="btnrow">
+      <button class="btn btn-ghost" id="csvBtn">CSV로 받기</button>
+      <button class="btn btn-ghost" id="mailBtn">세무사에게 메일</button>
+    </div>
+    <div class="hint">메일 버튼은 메일 앱을 열어 본문까지 채워 줍니다. 엑셀 파일은 저장 후 직접 첨부해 주세요.</div>
+  </div>`;
+}
+function afterReport(){
+  $('#prevM').onclick = () => { session.month = shiftMonth(session.month, -1); render(); };
+  $('#nextM').onclick = () => { session.month = shiftMonth(session.month, 1); render(); };
+  $('#xlsxBtn').onclick = makeExcel;
+  $('#csvBtn').onclick = makeCSV;
+  $('#mailBtn').onclick = mailReport;
+}
+
+function loadXLSX(){
+  return new Promise((res, rej) => {
+    if(window.XLSX) return res(window.XLSX);
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload = () => window.XLSX ? res(window.XLSX) : rej(new Error('load'));
+    s.onerror = () => rej(new Error('네트워크'));
+    document.head.appendChild(s);
+  });
+}
+const HEADERS = ['사용 일자','사용 카드','사용처','금액','사용 목적','비고'];
+function sheetRows(list){
+  return list.slice().sort((a,b) => a.date === b.date ? (a.last4 > b.last4 ? 1 : -1) : (a.date < b.date ? -1 : 1))
+    .map(r => [r.date, aliasOf(r.last4), r.vendor, Number(r.amount)||0, r.purpose||'', r.note||'']);
+}
+function safeSheetName(n){ return n.replace(/[\[\]\*\?\/\\:]/g,'').slice(0,31); }
+
+async function makeExcel(){
+  const list = monthReceipts(session.month, session.admin ? null : session.last4);
+  if(!list.length){ toast('해당 월에 내역이 없습니다.'); return; }
+  let XLSX;
+  try{ XLSX = await loadXLSX(); }
+  catch(e){ toast('엑셀 모듈을 불러오지 못했습니다. CSV로 받아 주세요.'); return; }
+
+  const [y, m] = session.month.split('-');
+  const wb = XLSX.utils.book_new();
+  const cols = [{wch:12},{wch:12},{wch:24},{wch:13},{wch:30},{wch:18}];
+
+  const build = (title, rows) => {
+    const aoa = [[title],[],HEADERS, ...rows, [], ['','','합 계', rows.reduce((t,r) => t + r[3], 0), '', '']];
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = cols;
+    const total = aoa.length;
+    for(let R = 3; R <= total; R++){
+      const ref = XLSX.utils.encode_cell({ c:3, r:R-1 });
+      if(ws[ref] && typeof ws[ref].v === 'number') ws[ref].z = '#,##0';
+    }
+    return ws;
+  };
+
+  const all = sheetRows(list);
+  XLSX.utils.book_append_sheet(wb, build(`${y}년 ${m}월 전체 법인카드 사용내역`, all), safeSheetName(`${y}년 ${m}월 전체법인카드`));
+
+  const cardIds = [...new Set(list.map(r => r.last4))].sort();
+  cardIds.forEach(l4 => {
+    const rows = sheetRows(list.filter(r => r.last4 === l4));
+    const name = safeSheetName(`${aliasOf(l4)}_${y.slice(2)}${m}`);
+    XLSX.utils.book_append_sheet(wb, build(`${aliasOf(l4)} ${y}년 ${m}월 사용내역`, rows), name);
+  });
+
+  XLSX.writeFile(wb, `주원엔지니어링_법인카드정산_${y}${m}.xlsx`);
+  toast('엑셀 파일을 저장했습니다.');
+}
+function makeCSV(){
+  const list = monthReceipts(session.month, session.admin ? null : session.last4);
+  if(!list.length){ toast('해당 월에 내역이 없습니다.'); return; }
+  const rows = sheetRows(list);
+  const csv = [HEADERS, ...rows, ['','','합 계', rows.reduce((t,r)=>t+r[3],0), '', '']]
+    .map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `주원엔지니어링_법인카드정산_${session.month.replace('-','')}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+function mailReport(){
+  const list = monthReceipts(session.month, session.admin ? null : session.last4);
+  const [y,m] = session.month.split('-');
+  const byCard = {};
+  list.forEach(r => { byCard[r.last4] = (byCard[r.last4]||0) + Number(r.amount||0); });
+  const body = [
+    `${S.settings.company} ${y}년 ${m}월 법인카드 사용내역 송부드립니다.`, '',
+    `총 ${list.length}건 / 합계 ${won(sum(list))}원`, '',
+    ...Object.entries(byCard).map(([l4,v]) => `- ${aliasOf(l4)} : ${won(v)}원`),
+    '', '상세 내역은 첨부한 엑셀 파일을 확인 부탁드립니다.', '', S.settings.company
+  ].join('\n');
+  const url = `mailto:${encodeURIComponent(S.settings.taxEmail||'')}?subject=${encodeURIComponent(`[${S.settings.company}] ${y}년 ${m}월 법인카드 정산자료`)}&body=${encodeURIComponent(body)}`;
+  location.href = url;
+}
+
+/* ---------- 11. 설정 ---------- */
+function viewSettings(){
+  const s = S.settings;
+  return `
+  ${session.admin ? `
+  <div class="sec-title">관리자</div>
+  <div class="card">
+    <button class="btn btn-ghost" id="cardsBtn">법인카드 관리 (${S.cards.filter(c=>c.active).length}장 사용 중)</button>
+    <label class="f"><span class="lb">회사명</span><input type="text" id="s_company" value="${esc(s.company)}"></label>
+    <label class="f"><span class="lb">세무사 이메일</span><input type="email" id="s_email" placeholder="tax@example.com" value="${esc(s.taxEmail)}"></label>
+    <label class="f"><span class="lb">관리자 비밀번호</span><input type="text" id="s_pin" value="${esc(s.adminPin)}"></label>
+  </div>` : `<div class="card empty">설정 변경은 관리자만 가능합니다.<br>사용 중인 카드: ${esc(aliasOf(session.last4))}</div>`}
+
+  ${session.admin ? `
+  <div class="sec-title">영수증 자동 인식 (OCR)</div>
+  <div class="card">
+    <label class="f"><span class="lb">Gemini API 키</span><input type="password" id="s_key" placeholder="AQ.…" value="${esc(s.geminiKey)}"></label>
+    <label class="f"><span class="lb">모델 이름</span><input type="text" id="s_model" value="${esc(s.geminiModel)}"></label>
+    <div class="hint">키는 Google AI Studio에서 무료로 발급받으며 <b>AQ.</b> 로 시작합니다. 이 기기에만 저장되고 코드에는 들어가지 않습니다. 인식이 안 되면 모델 이름을 최신 버전으로 바꿔 보세요.</div>
+    <div class="btnrow"><button class="btn btn-primary" id="saveSet">설정 저장</button></div>
+  </div>` : ''}
+
+  <div class="sec-title">데이터</div>
+  <div class="card">
+    <div class="kv"><span>등록된 영수증</span><b class="num">${S.receipts.length}건</b></div>
+    <div class="kv"><span>등록된 카드</span><b class="num">${S.cards.length}장</b></div>
+    <div class="btnrow">
+      <button class="btn btn-ghost" id="backupBtn">백업 파일 저장</button>
+      <button class="btn btn-ghost" id="restoreBtn">백업 복원</button>
+    </div>
+    <input type="file" id="restoreIn" accept="application/json" style="display:none">
+    <div class="hint">데이터는 이 기기 브라우저에 저장됩니다. 기기를 바꾸거나 캐시를 지우기 전에 꼭 백업하세요. 월말 정산 후 백업해 두는 습관을 권합니다.</div>
+  </div>
+  <div class="hint" style="text-align:center;margin-top:20px">${esc(s.company)} 법인카드 영수증 v1.0</div>`;
+}
+function afterSettings(){
+  if($('#cardsBtn')) $('#cardsBtn').onclick = () => { session.view = 'cards'; render(); };
+  if($('#saveSet')) $('#saveSet').onclick = async () => {
+    S.settings.company = $('#s_company').value.trim() || '(주)주원엔지니어링';
+    S.settings.taxEmail = $('#s_email').value.trim();
+    S.settings.adminPin = $('#s_pin').value.trim() || '1234';
+    S.settings.geminiKey = $('#s_key').value.trim();
+    S.settings.geminiModel = $('#s_model').value.trim() || 'gemini-3.5-flash';
+    await saveAll(); render(); toast('설정을 저장했습니다.');
+  };
+  $('#backupBtn').onclick = async () => {
+    const imgs = {};
+    for(const r of S.receipts){ if(r.hasImg){ const v = await ImgStore.get(r.id); if(v) imgs[r.id] = v; } }
+    const blob = new Blob([JSON.stringify({ cards:S.cards, receipts:S.receipts, settings:S.settings, imgs }, null, 1)], { type:'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `주원영수증_백업_${today()}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  };
+  $('#restoreBtn').onclick = () => $('#restoreIn').click();
+  $('#restoreIn').onchange = e => {
+    const f = e.target.files[0]; if(!f) return;
+    if(!confirm('현재 데이터를 백업 파일 내용으로 덮어씁니다. 계속할까요?')) return;
+    const fr = new FileReader();
+    fr.onload = async () => {
+      try{
+        const p = JSON.parse(fr.result);
+        S.cards = p.cards || []; S.receipts = p.receipts || [];
+        S.settings = Object.assign({}, DEFAULTS.settings, p.settings || {});
+        if(p.imgs) for(const k in p.imgs) await ImgStore.put(k, p.imgs[k]);
+        await saveAll(); render(); toast('복원했습니다.');
+      }catch(err){ toast('백업 파일을 읽지 못했습니다.'); }
+    };
+    fr.readAsText(f);
+  };
+}
+
+/* ---------- 12. 카드 관리 ---------- */
+function viewCards(){
+  const active = S.cards.filter(c => c.active);
+  const dead = S.cards.filter(c => !c.active);
+  const cnt = l4 => S.receipts.filter(r => r.last4 === l4).length;
+  const item = c => `<div class="row">
+      <div class="m">
+        <b>${esc(c.alias)} ${c.active ? '' : '<span class="tag off">폐기</span>'}</b>
+        <i>${c.dept ? esc(c.dept) + ' · ' : ''}누적 ${cnt(c.last4)}건</i>
+      </div>
+      <button class="btn ${c.active ? 'btn-danger' : 'btn-ghost'} sm" data-tog="${c.id}">${c.active ? '폐기' : '되살리기'}</button>
+    </div>`;
+  return `
+  <div class="card">
+    <b style="font-size:16px">법인카드 등록</b>
+    <label class="f"><span class="lb">카드 뒷 4자리</span><input type="text" id="c_last4" inputmode="numeric" maxlength="4" placeholder="1234"></label>
+    <label class="f"><span class="lb">주 사용 부서 / 사용자 (선택)</span><input type="text" id="c_dept" placeholder="예: 공무팀 김과장"></label>
+    <div class="btnrow"><button class="btn btn-primary" id="addCard">카드 추가</button></div>
+    <div class="hint">별칭은 <b>법인+뒷4자리</b> 형태로 자동 생성됩니다.</div>
+  </div>
+
+  <div class="sec-title">사용 중 (${active.length}장)</div>
+  ${active.length ? `<div class="rowlist">${active.map(item).join('')}</div>` : `<div class="card empty">사용 중인 카드가 없습니다.</div>`}
+
+  ${dead.length ? `<div class="sec-title">폐기된 카드 (${dead.length}장)</div><div class="rowlist">${dead.map(item).join('')}</div>
+  <div class="hint" style="margin-top:10px">폐기해도 과거 영수증 데이터는 그대로 남고 정산 보고서에도 계속 포함됩니다. 새 영수증 등록만 막힙니다.</div>` : ''}
+
+  <div class="btnrow"><button class="btn btn-ghost" id="backSet">설정으로 돌아가기</button></div>`;
+}
+function afterCards(){
+  $('#addCard').onclick = async () => {
+    const l4 = $('#c_last4').value.replace(/[^\d]/g,'');
+    if(l4.length !== 4){ toast('뒷 4자리를 숫자로 입력하세요.'); return; }
+    if(S.cards.some(c => c.last4 === l4)){ toast('이미 등록된 카드번호입니다.'); return; }
+    S.cards.push({ id:uid(), last4:l4, alias:'법인' + l4, dept:$('#c_dept').value.trim(), active:true });
+    await saveAll(); render(); toast('카드를 추가했습니다.');
+  };
+  document.querySelectorAll('[data-tog]').forEach(b => b.onclick = async () => {
+    const c = S.cards.find(x => x.id === b.dataset.tog);
+    if(c.active && !confirm(`${c.alias} 카드를 폐기 처리할까요?\n과거 내역은 그대로 유지됩니다.`)) return;
+    c.active = !c.active;
+    await saveAll(); render();
+  });
+  $('#backSet').onclick = () => { session.view = 'settings'; render(); };
+}
+
+/* ---------- 13. 시작 ---------- */
+(async function init(){
+  await loadAll();
+  const remembered = LS.get('juwon_remember') === '1' ? LS.get('juwon_last4') : null;
+  if(remembered && S.cards.some(c => c.last4 === remembered && c.active)){
+    session.last4 = remembered;
+  }
+  render();
+})();
+</script>
+</body>
+</html>
