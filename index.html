@@ -1030,7 +1030,7 @@ function viewSettings(){
     ${session.admin ? `<div class="btnrow"><button class="btn btn-danger" id="wipeBtn">영수증 데이터 전체 삭제</button></div>` : ''}
     <div class="hint">데이터는 이 기기 브라우저에 저장됩니다. 기기를 바꾸거나 캐시를 지우기 전에 꼭 백업하세요. 월말 정산 후 백업해 두는 습관을 권합니다.</div>
   </div>
-  <div class="hint" style="text-align:center;margin-top:20px">${esc(s.company)} 법인카드 영수증 <b>v1.7</b></div>`;
+  <div class="hint" style="text-align:center;margin-top:20px">${esc(s.company)} 법인카드 영수증 <b>v1.8</b></div>`;
 }
 function afterSettings(){
   if($('#toAdmin')) $('#toAdmin').onclick = askAdmin;
@@ -1085,13 +1085,15 @@ function viewCards(){
   const active = S.cards.filter(c => c.active);
   const dead = S.cards.filter(c => !c.active);
   const cnt = l4 => S.receipts.filter(r => r.last4 === l4).length;
-  const item = c => `<div class="row">
-      <div class="m">
-        <b>${esc(c.alias)} ${c.active ? '' : '<span class="tag off">폐기</span>'}</b>
-        <i>${c.dept ? esc(c.dept) + ' · ' : ''}누적 ${cnt(c.last4)}건</i>
+  const item = c => `<div class="row" style="flex-wrap:wrap;align-items:flex-start">
+      <div class="m" style="flex:1 1 100%">
+        <b>${esc(c.alias)} ${c.active ? '' : '<span class="tag off">폐기됨</span>'}</b>
+        <i>${c.dept ? esc(c.dept) + ' · ' : ''}등록된 영수증 ${cnt(c.last4)}건</i>
       </div>
-      <button class="btn ${c.active ? 'btn-danger' : 'btn-ghost'} sm" data-tog="${c.id}">${c.active ? '폐기' : '되살리기'}</button>
-      ${cnt(c.last4) === 0 ? `<button class="btn btn-ghost sm" data-del="${c.id}" style="margin-left:6px">삭제</button>` : ''}
+      <div style="display:flex;gap:8px;width:100%;margin-top:10px">
+        <button class="btn btn-ghost sm" style="flex:1" data-tog="${c.id}">${c.active ? '폐기 처리' : '다시 사용'}</button>
+        <button class="btn btn-danger sm" style="flex:1" data-del="${c.id}">완전 삭제</button>
+      </div>
     </div>`;
   return `
   <div class="card">
@@ -1099,7 +1101,7 @@ function viewCards(){
     <label class="f"><span class="lb">카드 뒷 4자리</span><input type="text" id="c_last4" inputmode="numeric" maxlength="4" placeholder="1234"></label>
     <label class="f"><span class="lb">주 사용 부서 / 사용자 (선택)</span><input type="text" id="c_dept" placeholder="예: 공무팀 김과장"></label>
     <div class="btnrow"><button class="btn btn-primary" id="addCard">카드 추가</button></div>
-    <div class="hint">별칭은 <b>법인+뒷4자리</b> 형태로 자동 생성됩니다. 등록된 영수증이 없는 카드만 완전 삭제할 수 있고, 내역이 있는 카드는 <b>폐기</b>로만 정리됩니다.</div>
+    <div class="hint">별칭은 <b>법인+뒷4자리</b> 형태로 자동 생성됩니다.<br><b>폐기 처리</b>는 카드는 목록에 남기고 새 등록만 막습니다(해지한 카드용). <b>완전 삭제</b>는 목록에서 없애며, 이미 등록된 영수증은 어느 쪽이든 그대로 유지됩니다.</div>
   </div>
 
   <div class="sec-title">사용 중 (${active.length}장)</div>
@@ -1126,7 +1128,11 @@ function afterCards(){
   });
   document.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => {
     const c = S.cards.find(x => x.id === b.dataset.del);
-    if(!confirm(`${c.alias} 카드를 목록에서 완전히 삭제할까요?\n등록된 영수증이 없어 사라지는 기록은 없습니다.`)) return;
+    const n = S.receipts.filter(r => r.last4 === c.last4).length;
+    const msg = n
+      ? `${c.alias} 카드를 목록에서 완전히 삭제합니다.\n\n이 카드로 등록된 영수증 ${n}건은 지워지지 않고 내역과 정산 보고서에 그대로 남습니다.\n계속할까요?`
+      : `${c.alias} 카드를 목록에서 완전히 삭제할까요?\n등록된 영수증이 없어 사라지는 기록은 없습니다.`;
+    if(!confirm(msg)) return;
     S.cards = S.cards.filter(x => x.id !== b.dataset.del);
     await saveAll(); render(); toast('카드를 삭제했습니다.');
   });
