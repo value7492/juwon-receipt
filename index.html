@@ -184,6 +184,44 @@ input:focus,select:focus,textarea:focus{border-color:var(--brand);background:#ff
 <body>
 <div id="app"></div>
 
+<script type="module">
+/* ===== Firebase 연결 ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDm3IbJ4YA3XQJK8qT45JgO3OcNqwj-kAo",
+  authDomain: "juwon-quote-452ef.firebaseapp.com",
+  projectId: "juwon-quote-452ef",
+  storageBucket: "juwon-quote-452ef.firebasestorage.app",
+  messagingSenderId: "1067518311798",
+  appId: "1:1067518311798:web:1234362517d4215bfb4e57"
+};
+
+try{
+  const fbApp = initializeApp(firebaseConfig);
+  const db = getFirestore(fbApp);
+  const ref = doc(db, "juwonReceipt", "main");
+  window.FB = {
+    ready: true,
+    async load(){
+      const snap = await getDoc(ref);
+      return snap.exists() ? snap.data() : null;
+    },
+    async save(data){
+      await setDoc(ref, { ...data, updatedAt: Date.now() });
+    },
+    watch(cb){
+      return onSnapshot(ref, snap => { if(snap.exists()) cb(snap.data()); });
+    }
+  };
+}catch(e){
+  window.FB = { ready:false, error:String(e) };
+}
+window.dispatchEvent(new Event('fb-ready'));
+</script>
+
 <script>
 /* =====================================================================
    주원엔지니어링 법인카드 영수증 자동화 — 단일 파일 웹앱
@@ -278,6 +316,7 @@ const DEFAULTS = {
     geminiModel:'gemini-3.5-flash',
     taxEmail:'',
     myEmail:'',
+    lastBackup:0,
     company:'(주)주원엔지니어링'
   }
 };
@@ -311,6 +350,66 @@ function toast(msg){
   setTimeout(() => el.remove(), 2200);
 }
 
+/* ===== 클라우드 동기화 ===== */
+let cloudState = 'connecting';   // connecting | online | offline
+let cloudTimer = null;
+
+function pack(){ return { cards:S.cards, receipts:S.receipts, settings:S.settings }; }
+
+function applyCloud(d){
+  if(!d) return false;
+  S.cards = d.cards || S.cards;
+  S.receipts = d.receipts || [];
+  S.settings = Object.assign({}, DEFAULTS.settings, d.settings || {});
+  return true;
+}
+
+/* 저장은 폰에 즉시, 클라우드에는 1.5초 모아서 한 번 */
+function cloudSave(){
+  if(!window.FB || !window.FB.ready) return;
+  clearTimeout(cloudTimer);
+  cloudTimer = setTimeout(async () => {
+    try{
+      await window.FB.save(pack());
+      if(cloudState !== 'online'){ cloudState = 'online'; render(); }
+    }catch(e){
+      if(cloudState !== 'offline'){ cloudState = 'offline'; render(); }
+    }
+  }, 1500);
+}
+
+async function cloudInit(){
+  if(!window.FB || !window.FB.ready){ cloudState = 'offline'; return; }
+  try{
+    const remote = await window.FB.load();
+    const localCount = S.receipts.length;
+    const remoteCount = remote && remote.receipts ? remote.receipts.length : 0;
+    if(remote && remoteCount >= localCount){
+      applyCloud(remote);
+      await Store.set(KEY, JSON.stringify(pack()));
+    }else{
+      await window.FB.save(pack());   /* 이 기기 데이터가 더 많으면 서버로 올림 */
+    }
+    cloudState = 'online';
+    window.FB.watch(d => {
+      if(!d || !d.receipts) return;
+      if(JSON.stringify(d.receipts) === JSON.stringify(S.receipts)) return;
+      applyCloud(d);
+      Store.set(KEY, JSON.stringify(pack()));
+      render();
+    });
+  }catch(e){
+    cloudState = 'offline';
+  }
+  render();
+}
+
+function cloudBadge(){
+  const m = { connecting:['연결 중','rgba(255,255,255,.16)'], online:['클라우드 저장','rgba(120,220,180,.28)'], offline:['이 기기에만 저장','rgba(255,190,120,.32)'] };
+  const [t,bg] = m[cloudState] || m.connecting;
+  return `<span class="cardchip" style="background:${bg}">${t}</span>`;
+}
+
 async function loadAll(){
   const raw = await Store.get(KEY);
   if(raw){
@@ -324,8 +423,8 @@ async function loadAll(){
   }
 }
 async function saveAll(){
-  const ok = await Store.set(KEY, JSON.stringify({ cards:S.cards, receipts:S.receipts, settings:S.settings }));
-  if(!ok) toast('저장 공간이 가득 찼습니다. 설정에서 백업 후 정리하세요.');
+  const ok = await Store.set(KEY, JSON.stringify(pack()));
+  cloudSave();
   return ok;
 }
 
@@ -453,6 +552,7 @@ function render(){
     <div class="topbar">
       <h1>${session.admin ? '관리자 모드' : esc(S.settings.company)}</h1>
       <span class="cardchip">${session.admin ? '전체 카드' : esc(aliasOf(session.last4))}</span>
+      ${cloudBadge()}
       <button class="linkbtn" id="logout">나가기</button>
     </div>
     <main id="main">${body}</main>
@@ -492,6 +592,7 @@ function viewHome(){
     </div>
   </div>
   <div class="tear"></div>
+  ${backupBannerHTML()}
   ${weekBannerHTML()}
 
   <div style="margin-top:16px">
@@ -515,6 +616,20 @@ function viewHome(){
     : `<div class="card empty">아직 등록된 영수증이 없습니다.<br>위 버튼으로 첫 영수증을 등록해 보세요.</div>`}
   `;
 }
+function backupBannerHTML(){
+  if(!S.receipts.length) return '';
+  const last = Number(S.settings.lastBackup) || 0;
+  const days = last ? Math.floor((Date.now()-last)/86400000) : null;
+  if(days !== null && days < 7) return '';
+  const msg = last ? `백업한 지 ${days}일 지났습니다` : '아직 한 번도 백업하지 않았습니다';
+  return `<button class="card" id="backupBanner" style="width:100%;text-align:left;display:flex;align-items:center;gap:10px;margin-top:12px;background:#FBEBE9;border-color:#EBC7C2">
+    <span style="flex:1;color:#8E2C21">
+      <b style="display:block;font-size:14px">${msg}</b>
+      <span style="font-size:12.5px;opacity:.9">영수증 ${S.receipts.length}건이 이 기기에만 있습니다. 지금 백업하세요</span>
+    </span>
+    <span style="font-size:20px;color:#8E2C21">›</span>
+  </button>`;
+}
 function weekBannerHTML(){
   const dow = new Date().getDay();
   if(dow !== 0 && dow !== 6) return '';
@@ -529,6 +644,7 @@ function weekBannerHTML(){
   </button>`;
 }
 function afterHome(){
+  if($('#backupBanner')) $('#backupBanner').onclick = () => { session.view = 'settings'; render(); };
   if($('#weekBanner')) $('#weekBanner').onclick = () => { session.week = fmtD(mondayOf(new Date())); session.view = 'report'; render(); };
   $('#shootBtn').onclick = () => $('#camIn').click();
   $('#galBtn').onclick = () => $('#galIn').click();
@@ -1022,15 +1138,16 @@ function viewSettings(){
   <div class="card">
     <div class="kv"><span>등록된 영수증</span><b class="num">${S.receipts.length}건</b></div>
     <div class="kv"><span>등록된 카드</span><b class="num">${S.cards.length}장</b></div>
+    <div class="kv"><span>마지막 백업</span><b>${S.settings.lastBackup ? new Date(S.settings.lastBackup).toLocaleDateString('ko-KR') : '없음'}</b></div>
     <div class="btnrow">
       <button class="btn btn-ghost" id="backupBtn">백업 파일 저장</button>
       <button class="btn btn-ghost" id="restoreBtn">백업 복원</button>
     </div>
     <input type="file" id="restoreIn" accept="application/json" style="display:none">
     ${session.admin ? `<div class="btnrow"><button class="btn btn-danger" id="wipeBtn">영수증 데이터 전체 삭제</button></div>` : ''}
-    <div class="hint">데이터는 이 기기 브라우저에 저장됩니다. 기기를 바꾸거나 캐시를 지우기 전에 꼭 백업하세요. 월말 정산 후 백업해 두는 습관을 권합니다.</div>
+    <div class="warn" style="background:var(--brand-soft);border-color:#BFDDD8;color:#0E4F4A">영수증 내역은 구글 클라우드(Firebase)에 자동 저장됩니다. 기기를 바꾸거나 캐시를 지워도 데이터가 유지되고, 여러 기기에서 같은 내역을 볼 수 있습니다.<br><b>단, 영수증 사진은 용량 때문에 이 기기에만 보관됩니다.</b> 사진까지 보존하려면 월 1회 백업을 권합니다.</div>
   </div>
-  <div class="hint" style="text-align:center;margin-top:20px">${esc(s.company)} 법인카드 영수증 <b>v1.8</b></div>`;
+  <div class="hint" style="text-align:center;margin-top:20px">${esc(s.company)} 법인카드 영수증 <b>v2.0</b></div>`;
 }
 function afterSettings(){
   if($('#toAdmin')) $('#toAdmin').onclick = askAdmin;
@@ -1045,6 +1162,8 @@ function afterSettings(){
     await saveAll(); render(); toast('설정을 저장했습니다.');
   };
   $('#backupBtn').onclick = async () => {
+    S.settings.lastBackup = Date.now();
+    await saveAll();
     const imgs = {};
     for(const r of S.receipts){ if(r.hasImg){ const v = await ImgStore.get(r.id); if(v) imgs[r.id] = v; } }
     const blob = new Blob([JSON.stringify({ cards:S.cards, receipts:S.receipts, settings:S.settings, imgs }, null, 1)], { type:'application/json' });
@@ -1141,12 +1260,20 @@ function afterCards(){
 
 /* ---------- 13. 시작 ---------- */
 (async function init(){
+  /* 브라우저가 저장 공간을 임의로 비우지 않도록 영구 보존 요청 */
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      const already = await navigator.storage.persisted();
+      if(!already) await navigator.storage.persist();
+    }
+  }catch(e){}
   await loadAll();
   const remembered = LS.get('juwon_remember') === '1' ? LS.get('juwon_last4') : null;
   if(remembered && S.cards.some(c => c.last4 === remembered && c.active)){
     session.last4 = remembered;
   }
   render();
+  cloudInit();
 })();
 </script>
 </body>
