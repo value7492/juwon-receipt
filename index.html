@@ -219,6 +219,7 @@ try{
 }catch(e){
   window.FB = { ready:false, error:String(e) };
 }
+window.FB_LOADED = true;
 window.dispatchEvent(new Event('fb-ready'));
 </script>
 
@@ -366,9 +367,10 @@ function applyCloud(d){
 
 /* 저장은 폰에 즉시, 클라우드에는 1.5초 모아서 한 번 */
 function cloudSave(){
-  if(!window.FB || !window.FB.ready) return;
   clearTimeout(cloudTimer);
   cloudTimer = setTimeout(async () => {
+    await waitFB(15000);
+    if(!window.FB || !window.FB.ready){ cloudState = 'offline'; render(); return; }
     try{
       await window.FB.save(pack());
       if(cloudState !== 'online'){ cloudState = 'online'; render(); }
@@ -378,8 +380,21 @@ function cloudSave(){
   }, 1500);
 }
 
+/* module 스크립트는 본문 파싱 후 실행되므로 준비될 때까지 기다린다 */
+function waitFB(ms){
+  return new Promise(res => {
+    if(window.FB_LOADED) return res(true);
+    let done = false;
+    const fin = () => { if(!done){ done = true; res(!!window.FB_LOADED); } };
+    window.addEventListener('fb-ready', fin, { once:true });
+    setTimeout(fin, ms || 15000);
+  });
+}
+
 async function cloudInit(){
-  if(!window.FB || !window.FB.ready){ cloudState = 'offline'; return; }
+  cloudState = 'connecting'; render();
+  await waitFB(15000);
+  if(!window.FB || !window.FB.ready){ cloudState = 'offline'; render(); return; }
   try{
     const remote = await window.FB.load();
     const localCount = S.receipts.length;
@@ -405,9 +420,9 @@ async function cloudInit(){
 }
 
 function cloudBadge(){
-  const m = { connecting:['연결 중','rgba(255,255,255,.16)'], online:['클라우드 저장','rgba(120,220,180,.28)'], offline:['이 기기에만 저장','rgba(255,190,120,.32)'] };
+  const m = { connecting:['연결 중…','rgba(255,255,255,.16)'], online:['클라우드 저장','rgba(120,220,180,.30)'], offline:['이 기기에만 저장 · 다시 연결','rgba(255,190,120,.34)'] };
   const [t,bg] = m[cloudState] || m.connecting;
-  return `<span class="cardchip" style="background:${bg}">${t}</span>`;
+  return `<button class="cardchip" id="cloudChip" style="background:${bg};color:#fff;border:1px solid rgba(255,255,255,.28)">${t}</button>`;
 }
 
 async function loadAll(){
@@ -558,6 +573,7 @@ function render(){
     <main id="main">${body}</main>
     ${session.view === 'form' ? '' : tabsHTML()}
   `;
+  if($('#cloudChip')) $('#cloudChip').onclick = () => { if(cloudState !== 'connecting') cloudInit(); };
   $('#logout').onclick = () => { session = { last4:null, admin:false, view:'home', month:ym(new Date()), week:fmtD(mondayOf(new Date())), draft:null, editId:null }; render(); };
   document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { session.view = b.dataset.v; render(); });
   const after = { home:afterHome, list:afterList, report:afterReport, settings:afterSettings, form:afterForm, cards:afterCards }[session.view];
@@ -1147,7 +1163,7 @@ function viewSettings(){
     ${session.admin ? `<div class="btnrow"><button class="btn btn-danger" id="wipeBtn">영수증 데이터 전체 삭제</button></div>` : ''}
     <div class="warn" style="background:var(--brand-soft);border-color:#BFDDD8;color:#0E4F4A">영수증 내역은 구글 클라우드(Firebase)에 자동 저장됩니다. 기기를 바꾸거나 캐시를 지워도 데이터가 유지되고, 여러 기기에서 같은 내역을 볼 수 있습니다.<br><b>단, 영수증 사진은 용량 때문에 이 기기에만 보관됩니다.</b> 사진까지 보존하려면 월 1회 백업을 권합니다.</div>
   </div>
-  <div class="hint" style="text-align:center;margin-top:20px">${esc(s.company)} 법인카드 영수증 <b>v2.0</b></div>`;
+  <div class="hint" style="text-align:center;margin-top:20px">${esc(s.company)} 법인카드 영수증 <b>v2.1</b></div>`;
 }
 function afterSettings(){
   if($('#toAdmin')) $('#toAdmin').onclick = askAdmin;
