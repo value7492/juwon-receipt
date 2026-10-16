@@ -686,7 +686,7 @@ async function handleFile(file){
   if(!file) return;
   toast('사진을 처리하는 중…');
   try{
-    const dataUrl = await compress(file, 1400, 0.62);
+    const dataUrl = await compress(file, 2000, 0.85);
     startDraft(dataUrl);
     runOCR(dataUrl);
   }catch(e){
@@ -734,25 +734,42 @@ async function runOCR(dataUrl){
     + '- amount: 합계/총액/승인금액 등 실제 결제된 최종 금액. 공급가액이나 부가세 금액이 아니다. 숫자만, 쉼표 없이.\n'
     + '설명이나 코드블록 없이 JSON만 출력.';
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method:'POST',
-      headers:{ 'Content-Type':'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        contents:[{ parts:[ { inline_data:{ mime_type:'image/jpeg', data:b64 } }, { text:prompt } ] }],
-        generationConfig:{ temperature:0 }
-      })
-    });
-    if(!res.ok){
-      const t = await res.text();
-      throw new Error(res.status + ' ' + t.slice(0,180));
+    const models = [model, 'gemini-2.5-flash'].filter((v,i,a) => v && a.indexOf(v) === i);
+    let text = '', lastErr = null;
+    for(const mdl of models){
+      for(let attempt = 0; attempt < 3; attempt++){
+        try{
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mdl)}:generateContent`, {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json', 'x-goog-api-key': key },
+            body: JSON.stringify({
+              contents:[{ parts:[ { inline_data:{ mime_type:'image/jpeg', data:b64 } }, { text:prompt } ] }],
+              generationConfig:{ temperature:0, responseMimeType:'application/json' }
+            })
+          });
+          if(!res.ok){
+            const t = await res.text();
+            lastErr = new Error(res.status + ' ' + t.slice(0,180));
+            if(res.status === 429 || res.status >= 500){ await new Promise(r => setTimeout(r, 1500*(attempt+1))); continue; }
+            break;
+          }
+          const j = await res.json();
+          const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
+          text = parts.filter(p => !p.thought).map(p => p.text || '').join('');
+          if(text.trim()){ lastErr = null; break; }
+          lastErr = new Error('빈 응답');
+        }catch(e){ lastErr = e; await new Promise(r => setTimeout(r, 1000)); }
+      }
+      if(text.trim()) break;
     }
-    const j = await res.json();
-    const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
-    const text = parts.map(p => p.text || '').join('');
+    if(!text.trim()) throw lastErr || new Error('응답 없음');
     const m = text.match(/\{[\s\S]*\}/);
     if(!m) throw new Error('형식 오류');
     const o = JSON.parse(m[0]);
-    if(o.date && /^\d{4}-\d{2}-\d{2}$/.test(o.date)) setVal('#f_date', o.date);
+    const dm = String(o.date || '').match(/(\d{2,4})\D+(\d{1,2})\D+(\d{1,2})/);
+    if(dm){ const yy = dm[1].length === 2 ? '20'+dm[1] : dm[1]; setVal('#f_date', yy+'-'+dm[2].padStart(2,'0')+'-'+dm[3].padStart(2,'0')); }
+    const l4 = String(o.last4 || '').replace(/\D/g,'').slice(-4);
+    if(l4 && cardOf(l4) && $('#f_card') && session.admin) setVal('#f_card', l4);
     if(o.vendor) setVal('#f_vendor', String(o.vendor).slice(0,40));
     const amt = Number(String(o.amount).replace(/[^\d]/g,''));
     if(amt > 0) setVal('#f_amount', amt);
